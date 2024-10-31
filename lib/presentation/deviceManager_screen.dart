@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_scaffold.dart';
 
 class DeviceManagerScreen extends StatelessWidget {
   final List<Map<String, String>> devices = [
@@ -9,11 +10,8 @@ class DeviceManagerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Lista de Dispositivos'),
-        backgroundColor: Colors.amber,
-      ),
+    return AppScaffold(
+      currentIndex: 3,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:masticat/presentation/dashboard_screen.dart';
-
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -28,7 +27,11 @@ class _LoginScreenState extends State<LoginScreen> {
     final height = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        backgroundColor: Colors.amber,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+      ),
       body: SingleChildScrollView(
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -53,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     SizedBox(height: 20),
-
                     TextFormField(
                       decoration: InputDecoration(
                         labelText: 'Email',
@@ -62,14 +64,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
+                          return 'Por favor, ingresa tu correo';
                         }
                         return null;
                       },
                       onSaved: (value) => _email = value!,
                     ),
                     SizedBox(height: 20),
-
                     TextFormField(
                       decoration: InputDecoration(
                         labelText: 'Contraseña',
@@ -78,14 +79,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: true,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return 'Por favor, ingresa tu contraseña';
                         }
                         return null;
                       },
                       onSaved: (value) => _password = value!,
                     ),
                     SizedBox(height: 10),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -111,7 +111,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     SizedBox(height: 20),
-
                     ElevatedButton(
                       onPressed: _onSubmit,
                       child: Text('Iniciar sesión'),
@@ -120,20 +119,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           horizontal: 80.0,
                           vertical: 15.0,
                         ),
+                        backgroundColor: Colors.amber,
                       ),
                     ),
                     SizedBox(height: 20),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text('¿No tienes una cuenta? '),
                         TextButton(
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => DashboardScreen()),
-                            );
+                            // Puedes redirigir a una pantalla de registro en el futuro
+                            print('Go to Registration');
                           },
                           child: Text('Regístrate'),
                         ),
