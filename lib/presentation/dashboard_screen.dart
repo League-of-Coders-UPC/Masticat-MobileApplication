@@ -46,17 +46,9 @@ class DashboardScreen extends StatelessWidget {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/deviceManager');
+                      Navigator.pushNamed(context, '/addPet');
                     },
-                    child: Card(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add, size: 40),
-                          Text('Agregar Dispositivo'),
-                        ],
-                      ),
-                    ),
+                    child: AddPetCard(),
                   ),
                 ),
               ],
@@ -80,34 +72,18 @@ class DashboardScreen extends StatelessWidget {
                       fit: BoxFit.cover,
                     ),
                   ),
-                  MouseRegion(
-                    onEnter: (_) {},
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      child: Text(
-                        'Apagar Cámara',
-                        style: TextStyle(
-                          color: Colors.black,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        backgroundColor: Colors.amber,
-                      ),
+                  ElevatedButton(
+                    onPressed: () {},
+                    child: Text(
+                      'Apagar Cámara',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      backgroundColor: Colors.amber,
                     ),
                   ),
                 ],
-              ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton.icon(
-              icon: Icon(Icons.add),
-              label: Text('Agregar Mascota'),
-              onPressed: () {
-                Navigator.pushNamed(context, '/addPet');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber,
               ),
             ),
             SizedBox(height: 20),
@@ -118,8 +94,18 @@ class DashboardScreen extends StatelessWidget {
             SizedBox(height: 16),
             Column(
               children: [
-                PetCard(petName: 'Luna', age: 3, weight: 5.5, imagePath: 'lib/images/cardluna.jpeg'),
-                PetCard(petName: 'Charlie', age: 2, weight: 7.0, imagePath: ''),
+                PetCard(
+                  petName: 'Luna',
+                  age: 3,
+                  weight: 5.5,
+                  imagePath: 'lib/images/cardluna.jpeg',
+                ),
+                PetCard(
+                  petName: 'Charlie',
+                  age: 2,
+                  weight: 7.0,
+                  imagePath: '',
+                ),
               ],
             ),
           ],
@@ -128,7 +114,6 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
-
 
 class StatCard extends StatelessWidget {
   final String title;
@@ -175,6 +160,38 @@ class StatCard extends StatelessWidget {
   }
 }
 
+class AddPetCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add,
+              size: 40,
+              color: Color(0xFF1E0E62),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Add Pet',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E0E62),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class PetCard extends StatelessWidget {
   final String petName;
@@ -182,7 +199,12 @@ class PetCard extends StatelessWidget {
   final double weight;
   final String imagePath;
 
-  PetCard({required this.petName, required this.age, required this.weight, required this.imagePath});
+  PetCard({
+    required this.petName,
+    required this.age,
+    required this.weight,
+    required this.imagePath,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -210,8 +232,7 @@ class PetCard extends StatelessWidget {
         subtitle: Text('$age años, $weight KG'),
         trailing: IconButton(
           icon: Icon(Icons.edit),
-          onPressed: () {
-          },
+          onPressed: () {},
         ),
       ),
     );
