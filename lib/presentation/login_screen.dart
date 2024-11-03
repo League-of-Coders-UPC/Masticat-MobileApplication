@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:masticat/presentation/register.dart';
 import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,7 +11,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   String _email = '';
   String _password = '';
-  bool _rememberMe = false;
 
   void _onSubmit() {
     if (_formKey.currentState!.validate()) {
@@ -24,121 +24,99 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
-
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.amber,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-      ),
-      body: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: height,
-          ),
-          child: IntrinsicHeight(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'lib/images/Logo.png',
+                  height: 100,
+                ),
+                SizedBox(height: 40),
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) => _email = value!,
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+                    if (value.length < 8) {
+                      return 'Password must be at least 8 characters long';
+                    }
+                    return null;
+                  },
+                  onSaved: (value) => _password = value!,
+                ),
+                SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      'Forgot your password?',
+                      style: TextStyle(color: Colors.amber),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _onSubmit,
+                  child: Text('Sign in'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                    padding: EdgeInsets.symmetric(horizontal: 80.0, vertical: 15.0),
+                    textStyle: TextStyle(fontSize: 18),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      'Masticat',
-                      style: TextStyle(
-                        fontFamily: 'Satisfy',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 40.0,
-                        letterSpacing: -0.29,
-                        color: Color(0xFF1E0E62),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor, ingresa tu correo';
-                        }
-                        return null;
+                    Text("Don't have an account? "),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => SignUpScreen()),
+                        );
                       },
-                      onSaved: (value) => _email = value!,
-                    ),
-                    SizedBox(height: 20),
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Contraseña',
-                        border: OutlineInputBorder(),
+                      child: Text(
+                        'Sign up',
+                        style: TextStyle(
+                          color: Colors.amber,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor, ingresa tu contraseña';
-                        }
-                        return null;
-                      },
-                      onSaved: (value) => _password = value!,
-                    ),
-                    SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _rememberMe,
-                              onChanged: (newValue) {
-                                setState(() {
-                                  _rememberMe = newValue!;
-                                });
-                              },
-                            ),
-                            Text('Recuérdame'),
-                          ],
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            print('Forgot Password');
-                          },
-                          child: Text('¿Olvidaste tu contraseña?'),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _onSubmit,
-                      child: Text('Iniciar sesión'),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 80.0,
-                          vertical: 15.0,
-                        ),
-                        backgroundColor: Colors.amber,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('¿No tienes una cuenta? '),
-                        TextButton(
-                          onPressed: () {
-                            // Puedes redirigir a una pantalla de registro en el futuro
-                            print('Go to Registration');
-                          },
-                          child: Text('Regístrate'),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
           ),
         ),
