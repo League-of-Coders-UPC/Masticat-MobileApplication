@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'actions_screen.dart';
 import 'dashboard_screen.dart';
-import 'profile.dart';
 import 'addPett_screen.dart';
+import 'actions_screen.dart';
 import 'deviceManager_screen.dart';
+import 'profile.dart';
 import 'notification_screen.dart';
-import 'login_screen.dart';
 
 class AppScaffold extends StatefulWidget {
   final int currentIndex;
@@ -17,86 +16,62 @@ class AppScaffold extends StatefulWidget {
   _AppScaffoldState createState() => _AppScaffoldState();
 }
 
-
 class _AppScaffoldState extends State<AppScaffold> {
   void _onItemTapped(int index) {
     switch (index) {
       case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => DashboardScreen()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DashboardScreen()));
         break;
       case 1:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => AddPetDialog()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AddPetDialog()));
         break;
       case 2:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => ActionsScreen()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ActionsScreen()));
         break;
       case 3:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => DeviceManagerScreen()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DeviceManagerScreen()));
         break;
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.amber,
-        title: Text(
-          'Masticat',
-          style: TextStyle(
-            fontFamily: 'Satisfy',
-            fontWeight: FontWeight.w400,
-            fontSize: 40.0,
-            letterSpacing: -0.29,
-            color: Color(0xFF1E0E62),
-          ),
+        title: Image.asset(
+          'lib/images/Logo.png',
+          height: 40,
         ),
+        centerTitle: false,
         actions: [
           IconButton(
-            icon: Icon(Icons.account_circle),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ProfileScreen()),
-              );
-            },
+            icon: Icon(Icons.account_circle, color: Colors.grey),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileScreen())),
           ),
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.notifications),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NotificationsScreen()),
-              );
-            },
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.notifications, color: Colors.grey),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => NotificationsScreen())),
+              ),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: CircleAvatar(
+                  radius: 5,
+                  backgroundColor: Colors.red,
+                ),
+              ),
+            ],
           ),
         ],
       ),
       body: widget.body,
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.amber,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -116,8 +91,6 @@ class _AppScaffoldState extends State<AppScaffold> {
           ),
         ],
         currentIndex: widget.currentIndex,
-        selectedItemColor: Colors.amber,
-        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
       ),
     );
