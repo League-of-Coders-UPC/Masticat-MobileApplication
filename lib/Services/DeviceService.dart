@@ -7,7 +7,7 @@ class DeviceService {
   final String baseUrl = 'https://your-backend-url.com/api/devices';
   final NotificationService _notificationService = NotificationService();
 
-  // Método para obtener la lista de dispositivos
+
   Future<List<Device>> fetchDevices() async {
     final response = await http.get(Uri.parse(baseUrl));
     if (response.statusCode == 200) {

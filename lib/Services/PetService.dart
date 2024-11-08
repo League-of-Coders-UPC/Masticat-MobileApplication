@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../model/Pet.dart';
-import '../services/NotificationService.dart';
+import '../Services/NotificationService.dart';
 
 
 class PetService {
