@@ -5,9 +5,14 @@ import 'package:masticat/presentation/notification_screen.dart';
 import 'package:masticat/presentation/profile.dart';
 import 'package:masticat/presentation/addPett_screen.dart';
 import 'package:masticat/presentation/deviceManager_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(MyApp());
 }
 
