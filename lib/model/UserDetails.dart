@@ -2,9 +2,11 @@ class UserDetails {
   final String userUuid;
   final String firstName;
   final String lastName;
-  final String? birthDate; // Ahora es opcional
+  final String? birthDate; // Opcional
   final String phoneNumber;
-  final String? imageUrl; // Ahora es opcional
+  final String? imageUrl; // Opcional
+  final String email;
+  final String password;
 
   UserDetails({
     required this.userUuid,
@@ -13,6 +15,8 @@ class UserDetails {
     this.birthDate, // Ya no es requerido
     required this.phoneNumber,
     this.imageUrl, // Ya no es requerido
+    required this.email,
+    required this.password,
   });
 
   factory UserDetails.fromJson(Map<String, dynamic> json) {
@@ -20,9 +24,11 @@ class UserDetails {
       userUuid: json['userUuid'],
       firstName: json['firstName'],
       lastName: json['lastName'],
-      birthDate: json['birthDate'], // Ya no es requerido
+      birthDate: json['birthDate'], // Opcional
       phoneNumber: json['phoneNumber'],
-      imageUrl: json['imageUrl'], // Ya no es requerido
+      imageUrl: json['imageUrl'], // Opcional
+      email: json['email'],
+      password: json['password'],
     );
   }
 
@@ -34,6 +40,8 @@ class UserDetails {
       'birthDate': birthDate,
       'phoneNumber': phoneNumber,
       'imageUrl': imageUrl,
+      'email': email,
+      'password': password,
     };
   }
 
@@ -44,6 +52,8 @@ class UserDetails {
     String? birthDate,
     String? phoneNumber,
     String? imageUrl,
+    String? email,
+    String? password,
   }) {
     return UserDetails(
       userUuid: userUuid ?? this.userUuid,
@@ -52,6 +62,8 @@ class UserDetails {
       birthDate: birthDate ?? this.birthDate,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       imageUrl: imageUrl ?? this.imageUrl,
+      email: email ?? this.email,
+      password: password ?? this.password,
     );
   }
 }

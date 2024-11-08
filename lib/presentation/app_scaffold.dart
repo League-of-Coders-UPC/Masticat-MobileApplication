@@ -38,11 +38,15 @@ class _AppScaffoldState extends State<AppScaffold> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset(
-          'lib/images/Logo.png',
-          height: 40,
+        title: Text(
+          'Masticat',
+          style: TextStyle(
+            fontFamily: 'Satisfy',
+            fontWeight: FontWeight.w400,
+            fontSize: 40.0,
+            color: Color(0xFF1E0E62),
+          ),
         ),
-        centerTitle: false,
         actions: [
           IconButton(
             icon: Icon(Icons.account_circle, color: Colors.grey),

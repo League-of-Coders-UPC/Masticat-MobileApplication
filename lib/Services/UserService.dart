@@ -4,6 +4,7 @@ import '../model/UserDetails.dart';
 
 class UserProfileService {
   final String baseUrl = 'https://your-backend-url.com/api/users';
+
   Future<UserDetails> getUserDetails(String userUuid) async {
     final response = await http.get(Uri.parse('$baseUrl/$userUuid'));
 
@@ -14,7 +15,6 @@ class UserProfileService {
     }
   }
 
-  // Actualizar los detalles del usuario
   Future<void> updateUser(UserDetails user) async {
     final response = await http.put(
       Uri.parse('$baseUrl/${user.userUuid}'),
@@ -27,12 +27,25 @@ class UserProfileService {
     }
   }
 
-  // Eliminar usuario por ID
   Future<void> deleteUser(String userUuid) async {
     final response = await http.delete(Uri.parse('$baseUrl/$userUuid'));
 
     if (response.statusCode != 200) {
       throw Exception('Error al eliminar el usuario');
+    }
+  }
+
+  Future<UserDetails> createUser(UserDetails newUser) async {
+    final response = await http.post(
+      Uri.parse(baseUrl),
+      headers: {"Content-Type": "application/json"},
+      body: json.encode(newUser.toJson()),
+    );
+
+    if (response.statusCode == 201) { // 201 Created
+      return UserDetails.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Error al crear el usuario');
     }
   }
 }

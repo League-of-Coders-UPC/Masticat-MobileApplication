@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'app_scaffold.dart';
+import 'package:flutter/services.dart';
 import '../model/Pet.dart';
-import '../Services/PetService.dart';
-import 'dart:io';
+import '../services/PetService.dart';
 
 class AddPetDialog extends StatefulWidget {
   @override
@@ -18,12 +16,9 @@ class _AddPetDialogState extends State<AddPetDialog> {
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _breedController = TextEditingController();
   String _species = 'Gato';
-  File? _imageFile;
 
   final PetService _petService = PetService();
   List<Pet> pets = [];
-
-  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -51,24 +46,15 @@ class _AddPetDialogState extends State<AddPetDialog> {
     }
   }
 
-  Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-    }
-  }
-
   Future<void> _addPet() async {
     if (_formKey.currentState!.validate()) {
       final newPet = Pet(
         uuid: '',
         userUuid: 'userUuid_placeholder',
         name: _nameController.text,
-        breed: _breedController.text.isNotEmpty ? _breedController.text : null,
+        breed: _breedController.text,
         species: _species,
-        birthDate: null,
+        birthDate: DateTime.now().toString(),
         weight: double.tryParse(_weightController.text) ?? 0.0,
         age: int.tryParse(_ageController.text) ?? 0,
         imageUrl: '',
@@ -93,9 +79,6 @@ class _AddPetDialogState extends State<AddPetDialog> {
       setState(() {
         pets.removeWhere((pet) => pet.uuid == petUuid);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Mascota eliminada')),
-      );
     } catch (e) {
       _showErrorSnackBar('Error al eliminar la mascota');
     }
@@ -106,8 +89,7 @@ class _AddPetDialogState extends State<AddPetDialog> {
     _weightController.clear();
     _ageController.clear();
     _breedController.clear();
-    _species = 'Especie';
-    _imageFile = null;
+    _species = 'Gato';
   }
 
   void _showErrorSnackBar(String message) {
@@ -128,24 +110,11 @@ class _AddPetDialogState extends State<AddPetDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: _pickImage,
-                    child: CircleAvatar(
-                      radius: 40,
-                      backgroundImage: _imageFile != null
-                          ? FileImage(_imageFile!)
-                          : AssetImage('assets/default-pet.png') as ImageProvider,
-                      child: _imageFile == null
-                          ? Icon(Icons.camera_alt, size: 40, color: Colors.grey)
-                          : null,
-                    ),
-                  ),
-                  SizedBox(height: 16),
                   Text('Nombre'),
                   TextFormField(
                     controller: _nameController,
                     decoration: InputDecoration(
-                      hintText: 'Nombre de tu mascota',
+                      hintText: 'Ingresa el nombre de tu mascota',
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -210,8 +179,14 @@ class _AddPetDialogState extends State<AddPetDialog> {
                   TextFormField(
                     controller: _breedController,
                     decoration: InputDecoration(
-                      hintText: 'Ingresa la raza (opcional)',
+                      hintText: 'Ingresa la raza',
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, ingresa la raza';
+                      }
+                      return null;
+                    },
                   ),
                 ],
               ),
@@ -275,9 +250,8 @@ class _AddPetDialogState extends State<AddPetDialog> {
                     species: pet.species,
                     weight: pet.weight,
                     age: pet.age,
-                    breed: pet.breed ?? 'Sin especificar',
+                    breed: pet.breed,
                     onDelete: () => _deletePet(pet.uuid),
-                    imageUrl: pet.imageUrl ?? '',
                   );
                 },
               ),
@@ -296,7 +270,6 @@ class PetCard extends StatelessWidget {
   final int age;
   final String breed;
   final VoidCallback onDelete;
-  final String imageUrl;
 
   PetCard({
     required this.petName,
@@ -305,7 +278,6 @@ class PetCard extends StatelessWidget {
     required this.age,
     required this.breed,
     required this.onDelete,
-    required this.imageUrl,
   });
 
   @override
@@ -316,11 +288,7 @@ class PetCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: imageUrl.isNotEmpty
-              ? NetworkImage(imageUrl)
-              : AssetImage('assets/default-pet.png') as ImageProvider,
-        ),
+        leading: Icon(Icons.pets, size: 40, color: Colors.amber),
         title: Text(
           petName,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),

@@ -48,9 +48,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         userUuid: userDetails!.userUuid,
         firstName: _firstNameController.text,
         lastName: _lastNameController.text,
-        birthDate: userDetails!.birthDate, // Utiliza la fecha de nacimiento original si está disponible
+        birthDate: userDetails!.birthDate,
         phoneNumber: _phoneNumberController.text,
-        imageUrl: _imageUrlController.text.isNotEmpty ? _imageUrlController.text : null,
+        imageUrl: _imageUrlController.text.isNotEmpty ? _imageUrlController.text :
+        null, email: '',
+        password: '',
       );
 
       try {

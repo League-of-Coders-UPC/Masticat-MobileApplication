@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../Services/DeviceService.dart';
+import '../services/DeviceService.dart';
 import '../model/Device.dart';
 import 'app_scaffold.dart';
 

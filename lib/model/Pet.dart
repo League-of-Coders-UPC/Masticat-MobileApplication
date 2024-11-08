@@ -2,23 +2,23 @@ class Pet {
   final String uuid;
   final String userUuid;
   final String name;
-  final String? breed; // Ahora es opcional
+  final String breed;
   final String species;
-  final String? birthDate; // Ahora es opcional
+  final String birthDate;
   final double weight;
   final int age;
-  final String? imageUrl; // Ahora es opcional
+  final String imageUrl;
 
   Pet({
     required this.uuid,
     required this.userUuid,
     required this.name,
-    this.breed, // Ya no es requerido
+    required this.breed,
     required this.species,
-    this.birthDate, // Ya no es requerido
+    required this.birthDate,
     required this.weight,
     required this.age,
-    this.imageUrl, // Ya no es requerido
+    required this.imageUrl,
   });
 
   factory Pet.fromJson(Map<String, dynamic> json) {
@@ -26,12 +26,12 @@ class Pet {
       uuid: json['uuid'],
       userUuid: json['userUuid'],
       name: json['name'],
-      breed: json['breed'], // Ya no es requerido
+      breed: json['breed'],
       species: json['species'],
-      birthDate: json['birthDate'], // Ya no es requerido
+      birthDate: json['birthDate'],
       weight: json['weight'],
       age: json['age'],
-      imageUrl: json['imageUrl'], // Ya no es requerido
+      imageUrl: json['imageUrl'],
     );
   }
 
