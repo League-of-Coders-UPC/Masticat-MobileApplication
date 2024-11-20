@@ -1,238 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import '../model/Pet/Pet.dart';
+import '../services/Service/PetService.dart';
 import 'app_scaffold.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
+  final String userId;
+
+  DashboardScreen({required this.userId});
+
+  @override
+  _DashboardScreenState createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final Dio dio = Dio(BaseOptions(
+    baseUrl: "https://animal-shelter-p65z.onrender.com/api",
+    connectTimeout: Duration.zero,
+    receiveTimeout: Duration.zero,
+  ));
+
+  late final PetService _petService = PetService(dio);
+  List<Pet> pets = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPets();
+  }
+
+  // Fetch pets from the service
+  Future<void> _fetchPets() async {
+    try {
+      final fetchedPets = await _petService.getPets();
+      final userPets = fetchedPets.where((pet) => pet.user.id == widget.userId).toList();
+
+      setState(() {
+        pets.clear();
+        pets.addAll(userPets);
+      });
+    } catch (e) {
+      print('Error fetching pets: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al obtener las mascotas')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
       currentIndex: 0,
-      body: SingleChildScrollView(
+      userId: widget.userId,
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: ListView(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: StatCard(
-                    title: 'Batería',
-                    icon: Icons.battery_charging_full,
-                    percentage: '44%',
-                  ),
-                ),
-                SizedBox(width: 16.0),
-                Expanded(
-                  child: StatCard(
-                    title: 'Comida',
-                    icon: Icons.restaurant,
-                    percentage: '50%',
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: StatCard(
-                    title: 'Agua',
-                    icon: Icons.water,
-                    percentage: '9%',
-                  ),
-                ),
-                SizedBox(width: 16.0),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, '/addPet');
-                    },
-                    child: AddPetCard(),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            Card(
-              child: ListTile(
-                title: Text('Hábitos de Alimentación'),
-                subtitle: Placeholder(fallbackHeight: 100),
-              ),
-            ),
-            SizedBox(height: 20),
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    title: Text('Cámara en Vivo'),
-                    subtitle: Image.asset(
-                      'lib/images/catcam.gif',
-                      height: 200,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {},
-                    child: Text(
-                      'Apagar Cámara',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      backgroundColor: Colors.amber,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
+            // Título del dashboard
             Text(
-              'Mis Mascotas',
+              'Mascotas Registradas para el usuario: ${widget.userId}',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 16),
-            Column(
-              children: [
-                PetCard(
-                  petName: 'Luna',
-                  age: 3,
-                  weight: 5.5,
-                  imagePath: 'lib/images/cardluna.jpeg',
-                ),
-                PetCard(
-                  petName: 'Charlie',
-                  age: 2,
-                  weight: 7.0,
-                  imagePath: '',
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+            SizedBox(height: 20),
 
-class StatCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final String percentage;
-
-  StatCard({required this.title, required this.icon, required this.percentage});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: Colors.amber),
-            SizedBox(height: 10),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E0E62),
+            // Lista de Mascotas
+            if (pets.isNotEmpty)
+              Column(
+                children: pets.map((pet) {
+                  return Card(
+                    margin: EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      title: Text('Mascota: ${pet.name}'),
+                      subtitle: Text('ID: ${pet.id}'),
+                    ),
+                  );
+                }).toList(),
               ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              percentage,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E0E62),
+            if (pets.isEmpty)
+              Center(
+                child: Text('No tienes mascotas registradas.', style: TextStyle(fontSize: 16)),
               ),
-            ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class AddPetCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.add,
-              size: 40,
-              color: Color(0xFF1E0E62),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Add Pet',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E0E62),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class PetCard extends StatelessWidget {
-  final String petName;
-  final int age;
-  final double weight;
-  final String imagePath;
-
-  PetCard({
-    required this.petName,
-    required this.age,
-    required this.weight,
-    required this.imagePath,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        leading: imagePath.isNotEmpty
-            ? ClipRRect(
-          borderRadius: BorderRadius.circular(12.0),
-          child: Image.asset(
-            imagePath,
-            width: 80,
-            height: 60,
-            fit: BoxFit.cover,
-          ),
-        )
-            : Icon(Icons.pets, size: 40),
-        title: Text(
-          petName,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        subtitle: Text('$age años, $weight KG'),
-        trailing: IconButton(
-          icon: Icon(Icons.edit),
-          onPressed: () {},
         ),
       ),
     );

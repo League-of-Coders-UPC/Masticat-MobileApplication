@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:masticat/presentation/register.dart';
+import '../Services/Service/AuthService.dart';
+import '../model/Seguridad/LoginRequest.dart';
 import 'dashboard_screen.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -9,20 +14,76 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _email = '';
-  String _password = '';
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: "https://animal-shelter-p65z.onrender.com/api",
+    connectTimeout: Duration.zero,
+    receiveTimeout: Duration.zero,
+  ));
+  late final AuthService _authService = AuthService(_dio);
 
-  void _onSubmit() {
+  String _username = '';
+  String _password = '';
+  String? _storedAccessToken;
+
+
+// Dentro de tu método _onSubmit
+  void _onSubmit() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => DashboardScreen()),
-      );
+
+      try {
+        print('Iniciando login...');
+        print('Datos enviados a /api/token: ${jsonEncode(
+            {"username": _username, "password": _password})}');
+
+        final loginResponse = await _authService.login(
+          LoginRequest(username: _username, password: _password).toJson(),
+        );
+
+        print('Respuesta de /api/token: ${jsonEncode(loginResponse.toJson())}');
+
+        final accessToken = loginResponse.access;
+
+        // Decodificar el token para obtener el user_id
+        Map<String, dynamic> decodedToken = JwtDecoder.decode(accessToken);
+        String userId = decodedToken['user_id'];
+        print('user_id decodificado: $userId');
+
+        // Aquí puedes guardar el user_id en una variable global o estado compartido, si lo necesitas:
+        // Example: GlobalState.userId = userId;
+
+        // Redirigir al dashboard
+        print('Login exitoso. Redirigiendo al dashboard...');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                DashboardScreen(
+                    userId: userId), // Pasar el userId si es necesario
+          ),
+        );
+      } catch (e) {
+        if (e is DioError) {
+          // Manejar DioError específicamente
+          print('Error durante la petición a /api/token: ${e.message}');
+          print('Datos recibidos: ${e.response?.data}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Error en el login: ${e.response?.data ?? e.message}'),
+            ),
+          );
+        } else {
+          // Manejar otros errores
+          print('Error inesperado: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error inesperado: $e')),
+          );
+        }
+      }
     }
   }
-
-  @override
+      @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
@@ -40,20 +101,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(height: 40),
                 TextFormField(
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'Username',
                     border: OutlineInputBorder(),
                   ),
-                  keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                      return 'Please enter a valid email';
+                      return 'Por favor ingrese su username';
                     }
                     return null;
                   },
-                  onSaved: (value) => _email = value!,
+                  onSaved: (value) => _username = value!,
                 ),
                 SizedBox(height: 20),
                 TextFormField(
@@ -64,25 +121,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    if (value.length < 8) {
-                      return 'Password must be at least 8 characters long';
+                      return 'Por favor ingrese su password';
                     }
                     return null;
                   },
                   onSaved: (value) => _password = value!,
-                ),
-                SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      'Forgot your password?',
-                      style: TextStyle(color: Colors.amber),
-                    ),
-                  ),
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(
@@ -98,16 +141,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Don't have an account? "),
+                    Text("¿No tienes una cuenta? "),
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => SignUpScreen()),
-                        );
+                        Navigator.pushNamed(context, '/register');
                       },
                       child: Text(
-                        'Sign up',
+                        'Registrar',
                         style: TextStyle(
                           color: Colors.amber,
                           fontWeight: FontWeight.bold,

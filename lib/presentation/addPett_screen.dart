@@ -1,302 +1,339 @@
 import 'package:flutter/material.dart';
-import 'app_scaffold.dart';
-import 'package:flutter/services.dart';
-import '../model/Pet.dart';
-import '../services/PetService.dart';
+import 'package:dio/dio.dart';
+import '../Services/Service/PetService.dart';
+import '../model/Pet/Pet.dart';
 
-class AddPetDialog extends StatefulWidget {
+class PetScreen extends StatefulWidget {
+  final String userId;
+
+  PetScreen({required this.userId});
+
   @override
-  _AddPetDialogState createState() => _AddPetDialogState();
+  _PetScreenState createState() => _PetScreenState();
 }
 
-class _AddPetDialogState extends State<AddPetDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _weightController = TextEditingController();
-  final TextEditingController _ageController = TextEditingController();
-  final TextEditingController _breedController = TextEditingController();
-  String _species = 'Gato';
-
-  final PetService _petService = PetService();
+class _PetScreenState extends State<PetScreen> {
   List<Pet> pets = [];
+  late PetService petService;
 
   @override
   void initState() {
     super.initState();
-    _fetchPets();
+    Dio dio = Dio();
+    petService = PetService(dio);
+    _fetchPets(); // Obtén la lista inicial de mascotas
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _weightController.dispose();
-    _ageController.dispose();
-    _breedController.dispose();
-    super.dispose();
-  }
-
+  // Obtener la lista de mascotas según el user_id
   Future<void> _fetchPets() async {
     try {
-      List<Pet> fetchedPets = await _petService.fetchPets();
+      final allPets = await petService.getPets();
+      final userPets = allPets.where((pet) => pet.user.id == widget.userId).toList();
       setState(() {
-        pets = fetchedPets;
+        pets = userPets;
       });
     } catch (e) {
-      _showErrorSnackBar('Error al cargar la lista de mascotas');
-    }
-  }
-
-  Future<void> _addPet() async {
-    if (_formKey.currentState!.validate()) {
-      final newPet = Pet(
-        uuid: '',
-        userUuid: 'userUuid_placeholder',
-        name: _nameController.text,
-        breed: _breedController.text,
-        species: _species,
-        birthDate: DateTime.now().toString(),
-        weight: double.tryParse(_weightController.text) ?? 0.0,
-        age: int.tryParse(_ageController.text) ?? 0,
-        imageUrl: '',
+      print('Error fetching pets: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar la lista de mascotas')),
       );
-
-      try {
-        await _petService.createPet(newPet);
-        setState(() {
-          pets.add(newPet);
-        });
-        _clearForm();
-        Navigator.pop(context);
-      } catch (e) {
-        _showErrorSnackBar('Error al crear la mascota');
-      }
     }
   }
 
-  Future<void> _deletePet(String petUuid) async {
+  // Agregar una nueva mascota
+  Future<void> _addPet() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddOrUpdatePetScreen(
+          userId: widget.userId,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      _fetchPets(); // Refresca la lista después de agregar
+    }
+  }
+
+  // Actualizar una mascota existente
+  Future<void> _updatePet(Pet pet) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddOrUpdatePetScreen(
+          userId: widget.userId,
+          pet: pet,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      _fetchPets(); // Refresca la lista después de actualizar
+    }
+  }
+
+  // Eliminar una mascota
+  Future<void> _deletePet(String petId) async {
     try {
-      await _petService.deletePet(petUuid);
+      await petService.deletePet(petId, widget.userId);
       setState(() {
-        pets.removeWhere((pet) => pet.uuid == petUuid);
+        pets.removeWhere((pet) => pet.id == petId);
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Mascota eliminada')),
+      );
     } catch (e) {
-      _showErrorSnackBar('Error al eliminar la mascota');
+      print('Error deleting pet: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al eliminar la mascota')),
+      );
     }
-  }
-
-  void _clearForm() {
-    _nameController.clear();
-    _weightController.clear();
-    _ageController.clear();
-    _breedController.clear();
-    _species = 'Gato';
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  void _showAddPetForm() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Agregar Nueva Mascota'),
-          content: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Nombre'),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      hintText: 'Ingresa el nombre de tu mascota',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, ingresa un nombre';
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  Text('Especie'),
-                  DropdownButtonFormField<String>(
-                    value: _species,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _species = newValue!;
-                      });
-                    },
-                    items: ['Gato', 'Perro'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    decoration: InputDecoration(
-                      hintText: 'Selecciona la especie',
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Text('Peso (kg)'),
-                  TextFormField(
-                    controller: _weightController,
-                    decoration: InputDecoration(
-                      hintText: 'Ingresa el peso de la mascota',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, ingresa el peso';
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  Text('Edad'),
-                  TextFormField(
-                    controller: _ageController,
-                    decoration: InputDecoration(
-                      hintText: 'Ingresa la edad de la mascota',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, ingresa la edad';
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  Text('Raza'),
-                  TextFormField(
-                    controller: _breedController,
-                    decoration: InputDecoration(
-                      hintText: 'Ingresa la raza',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, ingresa la raza';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: _addPet,
-              child: Text('Agregar'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Cancelar'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      currentIndex: 1,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Mis Mascotas',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                ElevatedButton.icon(
-                  onPressed: _showAddPetForm,
-                  icon: Icon(Icons.add),
-                  label: Text(''),
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    backgroundColor: Colors.amber,
-                    padding: EdgeInsets.symmetric(horizontal: 8),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Lista de Mascotas'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: _addPet, // Navega a la pantalla de agregar mascota
+          ),
+        ],
+      ),
+      body: pets.isEmpty
+          ? Center(child: Text('No hay mascotas registradas.'))
+          : ListView.builder(
+        itemCount: pets.length,
+        itemBuilder: (context, index) {
+          final pet = pets[index];
+          return Card(
+            margin: EdgeInsets.all(8.0),
+            child: ListTile(
+              leading: pet.image_url != null && pet.image_url!.isNotEmpty
+                  ? CircleAvatar(backgroundImage: NetworkImage(pet.image_url!))
+                  : CircleAvatar(child: Icon(Icons.pets)),
+              title: Text(pet.name),
+              subtitle: Text('${pet.species} - ${pet.breed}'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () => _updatePet(pet), // Navega a la pantalla de actualizar mascota
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: pets.length,
-                itemBuilder: (context, index) {
-                  final pet = pets[index];
-                  return PetCard(
-                    petName: pet.name,
-                    species: pet.species,
-                    weight: pet.weight,
-                    age: pet.age,
-                    breed: pet.breed,
-                    onDelete: () => _deletePet(pet.uuid),
-                  );
-                },
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deletePet(pet.id), // Llama al método para eliminar
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
 
-class PetCard extends StatelessWidget {
-  final String petName;
-  final String species;
-  final double weight;
-  final int age;
-  final String breed;
-  final VoidCallback onDelete;
+// Pantalla para agregar o actualizar mascota
+class AddOrUpdatePetScreen extends StatefulWidget {
+  final String userId;
+  final Pet? pet; // Si es null, se está agregando una nueva mascota
 
-  PetCard({
-    required this.petName,
-    required this.species,
-    required this.weight,
-    required this.age,
-    required this.breed,
-    required this.onDelete,
-  });
+  AddOrUpdatePetScreen({required this.userId, this.pet});
+
+  @override
+  _AddOrUpdatePetScreenState createState() => _AddOrUpdatePetScreenState();
+}
+
+class _AddOrUpdatePetScreenState extends State<AddOrUpdatePetScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late String name, breed, species, birthDate;
+  late double weight;
+  late int age;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.pet != null) {
+      // Si se está actualizando una mascota, llenamos los datos iniciales
+      name = widget.pet!.name;
+      breed = widget.pet!.breed;
+      species = widget.pet!.species;
+      birthDate = widget.pet!.birthDate;
+      weight = widget.pet!.weight.toDouble();
+      age = widget.pet!.age;
+    } else {
+      // Valores por defecto para agregar nueva mascota
+      name = '';
+      breed = '';
+      species = '';
+      birthDate = '';
+      weight = 0.0;
+      age = 0;
+    }
+  }
+
+  // Método para agregar una nueva mascota
+  Future<void> _addPet() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      try {
+        final Dio dio = Dio();
+        final petService = PetService(dio);
+
+        await petService.addPet({
+          'user_id': widget.userId,
+          'name': name,
+          'breed': breed,
+          'species': species,
+          'birth_date': birthDate,
+          'weight': weight,
+          'age': age,
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Mascota agregada exitosamente')),
+        );
+
+        Navigator.pop(context, true); // Redirigir con éxito
+      } catch (e) {
+        print('Error adding pet: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al agregar la mascota')),
+        );
+      }
+    }
+  }
+
+  // Método para actualizar una mascota
+  Future<void> _updatePet() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      try {
+        final Dio dio = Dio();
+        final petService = PetService(dio);
+
+        await petService.patchPet(widget.pet!.id, widget.userId, {
+          'name': name,
+          'breed': breed,
+          'species': species,
+          'birth_date': birthDate,
+          'weight': weight,
+          'age': age,
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Mascota actualizada exitosamente')),
+        );
+
+        Navigator.pop(context, true); // Redirigir con éxito
+      } catch (e) {
+        print('Error updating pet: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al actualizar la mascota')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.pet == null ? 'Agregar Mascota' : 'Actualizar Mascota'),
       ),
-      child: ListTile(
-        leading: Icon(Icons.pets, size: 40, color: Colors.amber),
-        title: Text(
-          petName,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        subtitle: Text('$species, $breed\nEdad: $age años, Peso: ${weight.toStringAsFixed(1)} kg'),
-        trailing: IconButton(
-          icon: Icon(Icons.delete, color: Colors.red),
-          onPressed: onDelete,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: <Widget>[
+              TextFormField(
+                initialValue: name,
+                decoration: InputDecoration(labelText: 'Nombre'),
+                onSaved: (value) => name = value!,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingrese el nombre de la mascota';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                initialValue: breed,
+                decoration: InputDecoration(labelText: 'Raza'),
+                onSaved: (value) => breed = value!,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingrese la raza de la mascota';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                initialValue: species,
+                decoration: InputDecoration(labelText: 'Especie'),
+                onSaved: (value) => species = value!,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingrese la especie de la mascota';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                initialValue: birthDate,
+                decoration: InputDecoration(labelText: 'Fecha de Nacimiento (YYYY-MM-DD)'),
+                onSaved: (value) => birthDate = value!,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingrese la fecha de nacimiento';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                initialValue: weight.toString(),
+                decoration: InputDecoration(labelText: 'Peso (kg)'),
+                keyboardType: TextInputType.number,
+                onSaved: (value) => weight = double.tryParse(value!) ?? 0,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingrese el peso de la mascota';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'El peso debe ser un número válido';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                initialValue: age.toString(),
+                decoration: InputDecoration(labelText: 'Edad (años)'),
+                keyboardType: TextInputType.number,
+                onSaved: (value) => age = int.tryParse(value!) ?? 0,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingrese la edad de la mascota';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'La edad debe ser un número entero válido';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: widget.pet == null ? _addPet : _updatePet,
+                child: Text(widget.pet == null ? 'Agregar Mascota' : 'Actualizar Mascota'),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import '../Services/Service/SignupService.dart';
+import '../model/Seguridad/SignupRequest.dart';
+import '../model/Seguridad/SignupResponse.dart';
+
+import 'package:dio/dio.dart';
 import 'login_screen.dart';
-import '../Services/UserService.dart'; // Asegúrate de que el path es correcto
-import '../model/UserDetails.dart';
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -10,41 +15,96 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-  final UserProfileService _userService = UserProfileService();
 
-  String _firstName = '';
-  String _lastName = '';
-  String _email = '';
-  String _password = '';
-  String _confirmPassword = '';
+  final Dio dio = Dio(BaseOptions(
+    baseUrl: "https://animal-shelter-p65z.onrender.com/api",
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
+  ))
+    ..interceptors.add(LogInterceptor(
+      request: true,
+      requestBody: true,
+      responseBody: true,
+      responseHeader: true,
+      logPrint: (log) => print(log),
+    ));
+
+  late final SignupService _signupService = SignupService(dio);
+
+  String username = '';
+  String first_name = '';
+  String last_name = '';
+  String email = '';
+  String password = '';
+  String birth_date = '';
+  String phone_number = '';
+  String image_url = 'http://example.com/profile.jpg'; // Default value
+  String role = 'user'; // Default role
 
   void _onSignUp() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
       try {
-        UserDetails newUser = UserDetails(
-          firstName: _firstName,
-          lastName: _lastName,
-          email: _email,
-          password: _password,
-          userUuid: '',
-          phoneNumber: '',
+        // Crear el objeto de solicitud
+        SignupRequest signupRequest = SignupRequest(
+          username: username,
+          email: email,
+          password: password,
+          role: role,
+          first_name: first_name,
+          last_name: last_name,
+          birth_date: birth_date,
+          phone_number: phone_number,
+          image_url: image_url,
         );
 
-        await _userService.createUser(newUser);
+        print('Request Data Sent: ${signupRequest.toJson()}');
 
+        // Enviar la solicitud y manejar la respuesta
+        final response = await _signupService.signup(signupRequest);
+
+        // Imprimir la respuesta del servidor
+        print('Response Data Received: ${response.toJson()}');
+
+        if (response.message == 'User created successfully') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'User created successfully! Username: ${response.user.username}, Email: ${response.user.email}, Role: ${response.user.role}',
+              ),
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => LoginScreen()),
+          );
+        } else {
+          throw Exception('Unexpected response: ${response.toJson()}');
+        }
+      } on DioError catch (dioError) {
+        print('Request Data Sent: ${dioError.requestOptions.data}');
+        print('Response Data Received: ${dioError.response?.data}');
+
+        if (dioError.response?.statusCode == 500) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Internal server error. Please try again later.'),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to create user: ${dioError.response?.data ?? dioError.message}',
+              ),
+            ),
+          );
+        }
+    } catch (e) {
+        print('Unexpected error: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('User created successfully! Please log in.')),
-        );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create user: $e')),
+          SnackBar(content: Text('Unexpected error: $e')),
         );
       }
     }
@@ -54,7 +114,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: SingleChildScrollView(  // Agregar SingleChildScrollView para evitar el desbordamiento
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Form(
@@ -65,6 +125,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Image.asset(
                     'lib/images/Logo.png',
                     height: 100,
+                  ),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    decoration: InputDecoration(labelText: 'Username'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your username';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) => username = value!,
                   ),
                   SizedBox(height: 20),
                   Row(
@@ -78,7 +149,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             }
                             return null;
                           },
-                          onSaved: (value) => _firstName = value!,
+                          onSaved: (value) => first_name = value!,
                         ),
                       ),
                       SizedBox(width: 10),
@@ -91,7 +162,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             }
                             return null;
                           },
-                          onSaved: (value) => _lastName = value!,
+                          onSaved: (value) => last_name = value!,
                         ),
                       ),
                     ],
@@ -109,7 +180,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       }
                       return null;
                     },
-                    onSaved: (value) => _email = value!,
+                    onSaved: (value) => email = value!,
                   ),
                   SizedBox(height: 20),
                   TextFormField(
@@ -124,19 +195,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       }
                       return null;
                     },
-                    onSaved: (value) => _password = value!,
+                    onSaved: (value) => password = value!,
                   ),
                   SizedBox(height: 20),
                   TextFormField(
-                    decoration: InputDecoration(labelText: 'Repeat Password'),
-                    obscureText: true,
+                    decoration: InputDecoration(labelText: 'Birth Date (YYYY-MM-DD)'),
                     validator: (value) {
-                      if (value == null || value != _password) {
-                        return 'Passwords do not match';
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your birth date';
                       }
                       return null;
                     },
-                    onSaved: (value) => _confirmPassword = value!,
+                    onSaved: (value) => birth_date = value!,
+                  ),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    decoration: InputDecoration(labelText: 'Phone Number'),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your phone number';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) => phone_number = value!,
                   ),
                   SizedBox(height: 20),
                   ElevatedButton(
@@ -144,31 +226,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     child: Text('Sign up'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber,
-                      padding: EdgeInsets.symmetric(horizontal: 60.0, vertical: 12.0), // Ajuste de padding para evitar desbordamiento
+                      padding: EdgeInsets.symmetric(horizontal: 60.0, vertical: 12.0),
                       textStyle: TextStyle(fontSize: 18),
                     ),
-                  ),
-                  SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Do you have an account? "),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => LoginScreen()),
-                          );
-                        },
-                        child: Text(
-                          'Sign in',
-                          style: TextStyle(
-                            color: Colors.amber,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

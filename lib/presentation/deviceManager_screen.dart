@@ -1,112 +1,167 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../services/DeviceService.dart';
-import '../model/Device.dart';
+import 'package:dio/dio.dart';
+import '../Services/Service/DeviceService.dart';
+import '../Services/Service/PetService.dart';
+import '../model/Device/Device.dart';
+import '../model/Pet/Pet.dart';
 import 'app_scaffold.dart';
 
 class DeviceManagerScreen extends StatefulWidget {
+  final String userId;
+
+  DeviceManagerScreen({required this.userId});
+
   @override
   _DeviceManagerScreenState createState() => _DeviceManagerScreenState();
 }
 
 class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
   final List<Device> devices = [];
-  final DeviceService _deviceService = DeviceService();
+  final List<Pet> pets = [];
+  final Dio dio = Dio(BaseOptions(
+    baseUrl: "https://animal-shelter-p65z.onrender.com/api",
+    connectTimeout: Duration.zero,
+    receiveTimeout: Duration.zero,
+  ));
+  late final DeviceService _deviceService = DeviceService(dio);
+  late final PetService _petService = PetService(dio);
 
   @override
   void initState() {
     super.initState();
+    _fetchPets();
     _fetchDevices();
   }
 
-  Future<void> _fetchDevices() async {
+  Future<void> _fetchPets() async {
     try {
-      List<Device> fetchedDevices = await _deviceService.fetchDevices();
+      final fetchedPets = await _petService.getPets();
+      final userPets = fetchedPets.where((pet) => pet.user.id == widget.userId).toList();
       setState(() {
-        devices.clear();
-        devices.addAll(fetchedDevices);
+        pets.clear();
+        pets.addAll(userPets);
       });
     } catch (e) {
-      _showErrorSnackBar('Error al obtener dispositivos');
+      print('Error fetching pets: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al obtener las mascotas')),
+      );
     }
   }
 
-  void _showAddDeviceForm() {
-    final _serialNumberController = TextEditingController();
-    final _statusController = TextEditingController();
+
+  Future<void> _fetchDevices() async {
+    try {
+      final allDevices = await _deviceService.getDevice();
+      final userDevices = allDevices.where((device) => device.user.id == widget.userId).toList();
+
+      setState(() {
+        devices.clear();
+        devices.addAll(userDevices);
+      });
+    } catch (e) {
+      print('Error fetching devices: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al obtener los dispositivos')),
+      );
+    }
+  }
+
+  void _showDeviceForm({Device? device}) {
+    final _serialNumberController = TextEditingController(
+      text: device?.serialNumber ?? '',
+    );
+    final _statusController = TextEditingController(
+      text: device?.status ?? '',
+    );
+    Pet? selectedPet = device?.pet;
 
     showDialog(
       context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-          child: AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Text(device == null ? 'Agregar Dispositivo' : 'Editar Dispositivo'),
+          content: SingleChildScrollView(
+            child: Column(
               children: [
-                Text("Agregar Dispositivo"),
-                IconButton(
-                  icon: Icon(Icons.close),
-                  onPressed: () {
-                    Navigator.of(context).pop();
+                DropdownButtonFormField<Pet>(
+                  value: selectedPet,
+                  items: pets.map((pet) {
+                    return DropdownMenuItem(
+                      value: pet,
+                      child: Text(pet.name),
+                    );
+                  }).toList(),
+                  onChanged: (pet) {
+                    setState(() {
+                      selectedPet = pet!;
+                    });
                   },
+                  decoration: InputDecoration(
+                    labelText: 'Seleccionar Mascota',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: _serialNumberController,
+                  decoration: InputDecoration(
+                    labelText: 'Número de Serie',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: _statusController,
+                  decoration: InputDecoration(
+                    labelText: 'Estado',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ],
             ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _serialNumberController,
-                    decoration: InputDecoration(
-                      labelText: 'Número de Serie',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextField(
-                    controller: _statusController,
-                    decoration: InputDecoration(
-                      labelText: 'Estado',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () async {
-                  if (_serialNumberController.text.isNotEmpty && _statusController.text.isNotEmpty) {
-                    Device newDevice = Device(
-                      uuid: DateTime.now().millisecondsSinceEpoch.toString(),
-                      petUuid: 'petUuid_placeholder',
-                      serialNumber: _serialNumberController.text,
-                      status: _statusController.text,
-                    );
-                    try {
-                      await _deviceService.createDevice(newDevice);
-                      setState(() {
-                        devices.add(newDevice);
-                      });
-                      Navigator.of(context).pop();
-                    } catch (e) {
-                      _showErrorSnackBar('Error al agregar dispositivo');
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                ),
-                child: Text("Agregar Dispositivo"),
-              ),
-            ],
           ),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                if (selectedPet == null ||
+                    _serialNumberController.text.isEmpty ||
+                    _statusController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Por favor completa los campos requeridos')),
+                  );
+                  return;
+                }
+
+                final payload = {
+                  'pet_id': selectedPet!.id,
+                  'serial_number': _serialNumberController.text,
+                  'status': _statusController.text,
+                };
+
+                print('Payload enviado: $payload');
+
+                try {
+                  if (device == null) {
+                    await _deviceService.addDevice(payload);
+                  } else {
+                    await _deviceService.patchDevice(device.id, payload);
+                  }
+                  Navigator.of(context).pop();
+                  _fetchDevices();
+                } catch (e) {
+                  print('Error saving device: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al guardar el dispositivo')),
+                  );
+                }
+              },
+              child: Text('Guardar'),
+            ),
+          ],
         );
       },
     );
@@ -116,52 +171,60 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
     try {
       await _deviceService.deleteDevice(deviceId);
       setState(() {
-        devices.removeWhere((device) => device.uuid == deviceId);
+        devices.removeWhere((device) => device.id == deviceId);
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Dispositivo eliminado exitosamente')),
+      );
     } catch (e) {
-      _showErrorSnackBar('Error al eliminar dispositivo');
+      print('Error deleting device: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al eliminar dispositivo')),
+      );
     }
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
       currentIndex: 3,
+      userId: widget.userId,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ElevatedButton(
-              onPressed: _showAddDeviceForm,
+              onPressed: () => _showDeviceForm(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber,
               ),
               child: Text('Agregar Dispositivo'),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 16),
             Expanded(
-              child: ListView.builder(
+              child: devices.isEmpty
+                  ? Center(child: Text('No hay dispositivos registrados.'))
+                  : ListView.builder(
                 itemCount: devices.length,
                 itemBuilder: (context, index) {
                   final device = devices[index];
                   return Card(
-                    elevation: 3,
-                    margin: EdgeInsets.symmetric(vertical: 10),
+                    margin: EdgeInsets.symmetric(vertical: 8.0),
                     child: ListTile(
-                      title: Text('Dispositivo ${device.serialNumber}'),
-                      subtitle: Text('ID: ${device.uuid} - Estado: ${device.status}'),
-                      trailing: IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          _deleteDevice(device.uuid);
-                        },
+                      title: Text('Dispositivo: ${device.serialNumber}'),
+                      subtitle: Text('Mascota: ${device.pet.name}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () => _showDeviceForm(device: device),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _deleteDevice(device.id),
+                          ),
+                        ],
                       ),
                     ),
                   );

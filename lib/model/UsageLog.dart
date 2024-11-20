@@ -1,39 +1,26 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'UsageLog.g.dart';
+
+@JsonSerializable()
 class UsageLog {
-  final String uuid;
-  final String deviceUuid;
-  final String type;
+  final String id;
+  final String deviceId;
+  final String logType;
   final int quantity;
-  final String time;
-  final int duration;
+  final DateTime time;
+  final String duration;
 
   UsageLog({
-    required this.uuid,
-    required this.deviceUuid,
-    required this.type,
+    required this.id,
+    required this.deviceId,
+    required this.logType,
     required this.quantity,
     required this.time,
     required this.duration,
   });
 
-  factory UsageLog.fromJson(Map<String, dynamic> json) {
-    return UsageLog(
-      uuid: json['uuid'],
-      deviceUuid: json['deviceUuid'],
-      type: json['type'],
-      quantity: json['quantity'],
-      time: json['time'],
-      duration: json['duration'],
-    );
-  }
+  factory UsageLog.fromJson(Map<String, dynamic> json) => _$UsageLogFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      'uuid': uuid,
-      'deviceUuid': deviceUuid,
-      'type': type,
-      'quantity': quantity,
-      'time': time,
-      'duration': duration,
-    };
-  }
+  Map<String, dynamic> toJson() => _$UsageLogToJson(this);
 }
