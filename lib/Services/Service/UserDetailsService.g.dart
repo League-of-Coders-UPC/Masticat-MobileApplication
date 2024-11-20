@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'DeviceService.dart';
+part of 'UserDetailsService.dart';
 
 // **************************************************************************
 // RetrofitGenerator
@@ -8,8 +8,8 @@ part of 'DeviceService.dart';
 
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations
 
-class _DeviceService implements DeviceService {
-  _DeviceService(
+class _UserDetailsService implements UserDetailsService {
+  _UserDetailsService(
     this._dio, {
     this.baseUrl,
     this.errorLogger,
@@ -24,19 +24,19 @@ class _DeviceService implements DeviceService {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<List<Device>> getDevice() async {
+  Future<List<UserDetails>> getUserDetailsByQuery(String userId) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'user_id': userId};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<Device>>(Options(
+    final _options = _setStreamType<List<UserDetails>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          '/devices/',
+          '/user-details',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -46,10 +46,10 @@ class _DeviceService implements DeviceService {
           baseUrl,
         )));
     final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<Device> _value;
+    late List<UserDetails> _value;
     try {
       _value = _result.data!
-          .map((dynamic i) => Device.fromJson(i as Map<String, dynamic>))
+          .map((dynamic i) => UserDetails.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -59,49 +59,23 @@ class _DeviceService implements DeviceService {
   }
 
   @override
-  Future<void> addDevice(Map<String, dynamic> payload) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(payload);
-    final _options = _setStreamType<void>(Options(
-      method: 'POST',
-      headers: _headers,
-      extra: _extra,
-    )
-        .compose(
-          _dio.options,
-          '/devices/',
-          queryParameters: queryParameters,
-          data: _data,
-        )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        )));
-    await _dio.fetch<void>(_options);
-  }
-
-  @override
-  Future<Device> patchDevice(
-    String deviceId,
-    Map<String, dynamic> updateData,
+  Future<UserDetails> patchUserDetail(
+    String id,
+    Map<String, dynamic> partialUpdate,
   ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    _data.addAll(updateData);
-    final _options = _setStreamType<Device>(Options(
+    _data.addAll(partialUpdate);
+    final _options = _setStreamType<UserDetails>(Options(
       method: 'PATCH',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          '/devices/${deviceId}/',
+          '/user-details/${id}/',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -111,9 +85,9 @@ class _DeviceService implements DeviceService {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late Device _value;
+    late UserDetails _value;
     try {
-      _value = Device.fromJson(_result.data!);
+      _value = UserDetails.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -122,7 +96,7 @@ class _DeviceService implements DeviceService {
   }
 
   @override
-  Future<void> deleteDevice(String deviceId) async {
+  Future<void> deleteUserDetail(String id) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
@@ -134,7 +108,7 @@ class _DeviceService implements DeviceService {
     )
         .compose(
           _dio.options,
-          '/devices/${deviceId}/',
+          '/user-details/${id}/',
           queryParameters: queryParameters,
           data: _data,
         )

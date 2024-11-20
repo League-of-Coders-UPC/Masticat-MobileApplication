@@ -16,26 +16,25 @@ class DeviceManagerScreen extends StatefulWidget {
 }
 
 class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
-  final List<Device> devices = [];
-  final List<Pet> pets = [];
-  final Dio dio = Dio(BaseOptions(
-    baseUrl: "https://animal-shelter-p65z.onrender.com/api",
-    connectTimeout: Duration.zero,
-    receiveTimeout: Duration.zero,
-  ));
-  late final DeviceService _deviceService = DeviceService(dio);
-  late final PetService _petService = PetService(dio);
+  List<Device> devices = [];
+  List<Pet> pets = [];
+
+  late  DeviceService deviceService;
+  late  PetService petService;
 
   @override
   void initState() {
     super.initState();
+    Dio dio = Dio();
+    deviceService = DeviceService(dio);
+    petService = PetService(dio);
     _fetchPets();
     _fetchDevices();
   }
 
   Future<void> _fetchPets() async {
     try {
-      final fetchedPets = await _petService.getPets();
+      final fetchedPets = await petService.getPets();
       final userPets = fetchedPets.where((pet) => pet.user.id == widget.userId).toList();
       setState(() {
         pets.clear();
@@ -52,12 +51,12 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
 
   Future<void> _fetchDevices() async {
     try {
-      final allDevices = await _deviceService.getDevice();
-      final userDevices = allDevices.where((device) => device.user.id == widget.userId).toList();
+      final allDevices = await deviceService.getDevice();
+      print(allDevices);
+      final userDevices = allDevices.where((device) => device.pet.id == widget.userId).toList();
 
       setState(() {
-        devices.clear();
-        devices.addAll(userDevices);
+        devices = allDevices;
       });
     } catch (e) {
       print('Error fetching devices: $e');
@@ -69,7 +68,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
 
   void _showDeviceForm({Device? device}) {
     final _serialNumberController = TextEditingController(
-      text: device?.serialNumber ?? '',
+      text: device?.serial_number ?? '',
     );
     final _statusController = TextEditingController(
       text: device?.status ?? '',
@@ -137,18 +136,18 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
                 }
 
                 final payload = {
-                  'pet_id': selectedPet!.id,
-                  'serial_number': _serialNumberController.text,
-                  'status': _statusController.text,
+                  'pet_id': '"${selectedPet!.id}"',
+                  'serial_number': '"${_serialNumberController.text}"',
+                  'status': '"${_statusController.text}"',
                 };
 
                 print('Payload enviado: $payload');
 
                 try {
                   if (device == null) {
-                    await _deviceService.addDevice(payload);
+                    await deviceService.addDevice(payload);
                   } else {
-                    await _deviceService.patchDevice(device.id, payload);
+                    await deviceService.patchDevice(device.id, payload);
                   }
                   Navigator.of(context).pop();
                   _fetchDevices();
@@ -158,6 +157,8 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
                     SnackBar(content: Text('Error al guardar el dispositivo')),
                   );
                 }
+
+                print('Datos enviados Device: $payload');
               },
               child: Text('Guardar'),
             ),
@@ -169,7 +170,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
 
   Future<void> _deleteDevice(String deviceId) async {
     try {
-      await _deviceService.deleteDevice(deviceId);
+      await deviceService.deleteDevice(deviceId);
       setState(() {
         devices.removeWhere((device) => device.id == deviceId);
       });
@@ -211,7 +212,7 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
                   return Card(
                     margin: EdgeInsets.symmetric(vertical: 8.0),
                     child: ListTile(
-                      title: Text('Dispositivo: ${device.serialNumber}'),
+                      title: Text('Dispositivo: ${device.serial_number}'),
                       subtitle: Text('Mascota: ${device.pet.name}'),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,

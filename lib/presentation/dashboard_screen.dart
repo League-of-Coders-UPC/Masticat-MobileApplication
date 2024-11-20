@@ -56,7 +56,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            // Título del dashboard
             Text(
               'Mascotas Registradas para el usuario: ${widget.userId}',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),

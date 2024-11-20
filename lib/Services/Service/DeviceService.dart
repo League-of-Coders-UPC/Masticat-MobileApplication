@@ -9,7 +9,7 @@ part 'DeviceService.g.dart';
 abstract class DeviceService {
   factory DeviceService(Dio dio, {String baseUrl}) = _DeviceService;
 
-  // Obtener todos los dispositivos
+
   @GET("/devices/")
   Future<List<Device>> getDevice();
 
@@ -17,14 +17,12 @@ abstract class DeviceService {
   Future<void> addDevice(@Body() Map<String, dynamic> payload);
 
 
-  // Actualizar un dispositivo parcialmente
   @PATCH("/devices/{device_id}/")
   Future<Device> patchDevice(
       @Path("device_id") String deviceId,
       @Body() Map<String, dynamic> updateData,
       );
 
-  // Eliminar un dispositivo
   @DELETE("/devices/{device_id}/")
   Future<void> deleteDevice(@Path("device_id") String deviceId);
 }
