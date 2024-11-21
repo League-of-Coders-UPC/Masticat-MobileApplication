@@ -10,8 +10,9 @@ abstract class DeviceService {
   factory DeviceService(Dio dio, {String baseUrl}) = _DeviceService;
 
 
+
   @GET("/devices/")
-  Future<List<Device>> getDevice();
+  Future<List<Device>> getUserDeviceByQuery(@Query("user_id") String userId);
 
   @POST("/devices/")
   Future<void> addDevice(@Body() Map<String, dynamic> payload);
@@ -25,4 +26,9 @@ abstract class DeviceService {
 
   @DELETE("/devices/{device_id}/")
   Future<void> deleteDevice(@Path("device_id") String deviceId);
+
+  @GET("/devices/{device_id}/")
+  Future<Device> getDeviceById(@Path("device_id") String deviceId);
+
+
 }

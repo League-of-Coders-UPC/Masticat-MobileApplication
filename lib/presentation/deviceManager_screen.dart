@@ -51,10 +51,8 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
 
   Future<void> _fetchDevices() async {
     try {
-      final allDevices = await deviceService.getDevice();
+      final allDevices = await deviceService.getUserDeviceByQuery(widget.userId);
       print(allDevices);
-      final userDevices = allDevices.where((device) => device.pet.id == widget.userId).toList();
-
       setState(() {
         devices = allDevices;
       });
@@ -86,17 +84,17 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
           content: SingleChildScrollView(
             child: Column(
               children: [
-                DropdownButtonFormField<Pet>(
-                  value: selectedPet,
+                DropdownButtonFormField<String>(
+                  value: selectedPet?.id, // Usa el ID de la mascota seleccionada
                   items: pets.map((pet) {
                     return DropdownMenuItem(
-                      value: pet,
+                      value: pet.id, // Usa el ID de cada mascota como valor único
                       child: Text(pet.name),
                     );
                   }).toList(),
-                  onChanged: (pet) {
+                  onChanged: (petId) {
                     setState(() {
-                      selectedPet = pet!;
+                      selectedPet = pets.firstWhere((pet) => pet.id == petId); // Busca la mascota correspondiente por ID
                     });
                   },
                   decoration: InputDecoration(
@@ -136,9 +134,9 @@ class _DeviceManagerScreenState extends State<DeviceManagerScreen> {
                 }
 
                 final payload = {
-                  'pet_id': '"${selectedPet!.id}"',
-                  'serial_number': '"${_serialNumberController.text}"',
-                  'status': '"${_statusController.text}"',
+                  'pet_id': selectedPet!.id,
+                  'serial_number': _serialNumberController.text,
+                  'status': _statusController.text,
                 };
 
                 print('Payload enviado: $payload');
