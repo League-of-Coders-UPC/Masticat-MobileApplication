@@ -4,6 +4,8 @@ import '../Services/Service/DeviceService.dart';
 import '../model/Device/Device.dart';
 import '../model/Pet/Pet.dart';
 import '../Services/Service/PetService.dart';
+import 'profile.dart'; // Importa la pantalla de perfil
+import 'actions_screen.dart'; // Importa la pantalla de acciones
 
 class DashboardScreen extends StatefulWidget {
   final String userId;
@@ -19,6 +21,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late PetService petService;
   List<Device> devices = [];
   List<Pet> pets = [];
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -56,6 +59,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al obtener las mascotas')),
       );
+    }
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+
+    // Redirigir a la pantalla correspondiente
+    switch (index) {
+      case 0:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DashboardScreen(userId: widget.userId),
+          ),
+        );
+        break;
+      case 1:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfileScreen(userId: widget.userId),
+          ),
+        );
+        break;
+      case 2:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ActionsScreen(userId: widget.userId),
+          ),
+        );
+        break;
     }
   }
 
@@ -154,6 +191,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.amber,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.grey[600],
+        currentIndex: _currentIndex,
+        onTap: _onItemTapped,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_circle),
+            label: 'Perfil',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_activity),
+            label: 'Acciones',
+          ),
+        ],
+      ),
     );
   }
 
@@ -168,7 +226,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Títulos
             Text(
               "Device: ${device.serial_number}",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -177,13 +234,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                // Porcentaje de Comida
                 _buildPercentageIndicator(
                   label: "Food",
                   percentage: device.foodPercentage,
                   color: Colors.redAccent,
                 ),
-                // Porcentaje de Agua
                 _buildPercentageIndicator(
                   label: "Water",
                   percentage: device.waterPercentage,
