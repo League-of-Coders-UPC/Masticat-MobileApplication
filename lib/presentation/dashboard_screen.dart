@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../Services/Service/DeviceService.dart';
+import '../Services/Service/PetService.dart';
 import '../model/Device/Device.dart';
 import '../model/Pet/Pet.dart';
-import '../Services/Service/PetService.dart';
-import 'profile.dart'; // Importa la pantalla de perfil
-import 'actions_screen.dart'; // Importa la pantalla de acciones
+import 'app_scaffold.dart';
 
 class DashboardScreen extends StatefulWidget {
   final String userId;
@@ -21,7 +20,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late PetService petService;
   List<Device> devices = [];
   List<Pet> pets = [];
-  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -62,72 +60,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-
-    // Redirigir a la pantalla correspondiente
-    switch (index) {
-      case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DashboardScreen(userId: widget.userId),
-          ),
-        );
-        break;
-      case 1:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProfileScreen(userId: widget.userId),
-          ),
-        );
-        break;
-      case 2:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ActionsScreen(userId: widget.userId),
-          ),
-        );
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Masticat Dashboard',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.amber,
-        elevation: 0,
-      ),
+    return AppScaffold(
+      currentIndex: 0,
+      userId: widget.userId,
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Text(
-              "Bienvenido a tu tablero Masticat 🐾",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            Center(
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.amber,
+                    child: Icon(
+                      Icons.dashboard,
+                      size: 50,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    "Bienvenido a tu tablero",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    "Usuario ID: ${widget.userId}",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: 10),
-            Text(
-              "Usuario ID: ${widget.userId}",
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-            SizedBox(height: 20),
+            SizedBox(height: 32),
 
-            // Lista de Mascotas
+            // Mascotas
             Text(
               "Tus Mascotas",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
             ),
             SizedBox(height: 10),
             pets.isNotEmpty
@@ -147,12 +123,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Text(
                           pet.name,
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
                         SizedBox(height: 10),
                         Text(
                           'ID: ${pet.id}',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -168,10 +151,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             SizedBox(height: 20),
 
-            // Lista de Dispositivos
+            // Dispositivos
             Text(
               "Tus Dispositivos IoT",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
             ),
             SizedBox(height: 10),
             devices.isNotEmpty
@@ -179,7 +166,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
               spacing: 10,
               runSpacing: 10,
               children: devices.map((device) {
-                return _buildDeviceCard(device);
+                return Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Dispositivo: ${device.serial_number}",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildPercentageIndicator(
+                              label: "Comida",
+                              percentage: device.foodPercentage,
+                              color: Colors.redAccent,
+                            ),
+                            _buildPercentageIndicator(
+                              label: "Agua",
+                              percentage: device.waterPercentage,
+                              color: Colors.blueAccent,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
               }).toList(),
             )
                 : Center(
@@ -187,64 +211,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 "No tienes dispositivos registrados.",
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.amber,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.grey[600],
-        currentIndex: _currentIndex,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle),
-            label: 'Perfil',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_activity),
-            label: 'Acciones',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeviceCard(Device device) {
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Device: ${device.serial_number}",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildPercentageIndicator(
-                  label: "Food",
-                  percentage: device.foodPercentage,
-                  color: Colors.redAccent,
-                ),
-                _buildPercentageIndicator(
-                  label: "Water",
-                  percentage: device.waterPercentage,
-                  color: Colors.blueAccent,
-                ),
-              ],
             ),
           ],
         ),
@@ -270,14 +236,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             Text(
               "${percentage.toStringAsFixed(0)}%",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
           ],
         ),
         SizedBox(height: 8),
         Text(
           label,
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.black54,
+          ),
         ),
       ],
     );
